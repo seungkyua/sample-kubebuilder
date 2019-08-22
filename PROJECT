@@ -1,0 +1,7 @@
+version: "2"
+domain: k8s.io
+repo: sample-kubebuilder
+resources:
+- group: samplecontroller
+  version: v1alpha1
+  kind: Foo
