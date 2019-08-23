@@ -85,7 +85,7 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if foo.Spec.Replicas != nil && *foo.Spec.Replicas != *deployment.Spec.Replicas {
-		reqLogger.Info("Foo %s replicas: %d, deployment replicas: %d", foo.Name, *foo.Spec.Replicas, *deployment.Spec.Replicas)
+		reqLogger.Info("Replicas defferent", "foo replicas", *foo.Spec.Replicas, "deployment replicas", *deployment.Spec.Replicas)
 		deployment = newDeployment(foo)
 		err = r.Update(context.TODO(), deployment)
 	}
