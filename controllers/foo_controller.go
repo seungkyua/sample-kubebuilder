@@ -45,12 +45,12 @@ type FooReconciler struct {
 // +kubebuilder:rbac:groups=samplecontroller.k8s.io,resources=foos/status,verbs=get;update;patch
 
 func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
+	ctx := context.Background()
 	reqLogger := r.Log.WithValues("foo", req.NamespacedName)
 	reqLogger.Info("=== Reconciling Foo")
 
 	foo := &samplev1alpha1.Foo{}
-	err := r.Get(context.TODO(), req.NamespacedName, foo)
+	err := r.Get(ctx, req.NamespacedName, foo)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			utilruntime.HandleError(fmt.Errorf("foo '%s' in work queue no longer exists", req.Name))
@@ -66,10 +66,10 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	deployment := &appsv1.Deployment{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: deploymentName, Namespace: foo.Namespace}, deployment)
+	err = r.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: foo.Namespace}, deployment)
 	if errors.IsNotFound(err) {
 		deployment = newDeployment(foo)
-		err = r.Create(context.TODO(), deployment)
+		err = r.Create(ctx, deployment)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -88,14 +88,14 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if foo.Spec.Replicas != nil && *foo.Spec.Replicas != *deployment.Spec.Replicas {
 		reqLogger.Info("Replicas defferent", "foo replicas", *foo.Spec.Replicas, "deployment replicas", *deployment.Spec.Replicas)
 		deployment = newDeployment(foo)
-		err = r.Update(context.TODO(), deployment)
+		err = r.Update(ctx, deployment)
 	}
 
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = r.updateFooStatus(foo, deployment)
+	err = r.updateFooStatus(ctx, foo, deployment)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -109,10 +109,10 @@ func (r *FooReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *FooReconciler) updateFooStatus(foo *samplev1alpha1.Foo, deployment *appsv1.Deployment) error {
+func (r *FooReconciler) updateFooStatus(ctx context.Context, foo *samplev1alpha1.Foo, deployment *appsv1.Deployment) error {
 	fooCopy := foo.DeepCopy()
 	fooCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
-	err := r.Update(context.TODO(), fooCopy)
+	err := r.Update(ctx, fooCopy)
 	return err
 }
 
