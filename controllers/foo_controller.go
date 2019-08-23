@@ -53,6 +53,7 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(context.TODO(), req.NamespacedName, foo)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			utilruntime.HandleError(fmt.Errorf("foo '%s' in work queue no longer exists", req.Name))
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -60,7 +61,7 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	deploymentName := foo.Spec.DeploymentName
 	if deploymentName == "" {
-		utilruntime.HandleError(fmt.Errorf("foo '%s' in work queue no longer exists", req.Name))
+		utilruntime.HandleError(fmt.Errorf("%s: deployment name must be specified", req.Name))
 		return reconcile.Result{}, nil
 	}
 
@@ -68,9 +69,9 @@ func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err = r.Get(context.TODO(), types.NamespacedName{Name: deploymentName, Namespace: foo.Namespace}, deployment)
 	if errors.IsNotFound(err) {
 		deployment = newDeployment(foo)
-		errTemp := r.Create(context.TODO(), deployment)
-		if errTemp != nil {
-			return reconcile.Result{}, errTemp
+		err = r.Create(context.TODO(), deployment)
+		if err != nil {
+			return reconcile.Result{}, err
 		}
 		reqLogger.Info("Pod launched", "name", deployment.Name)
 	}
